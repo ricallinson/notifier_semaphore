@@ -1,2 +1,2 @@
-# notifier semaphore
+# Notifier Semaphore
 

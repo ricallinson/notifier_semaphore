@@ -21,7 +21,10 @@
 //    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 //    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <SimpleTimer.h>
 #include <Servo.h>
+
+SimpleTimer timer;
 
 /*
     Flag 1
@@ -106,6 +109,119 @@ const int CODES[26][2] = {
 
 const int MASTERPIN = 13;
 
+// Random word code.
+int randomWordIntervalCounter = 0;
+const int WORD_COUNT = 93;
+char *WORDS[94] = {
+    "AARDVARK",
+    "AFTERMATH",
+    "ALUMINIUM",
+    "APPEAL",
+    "ASHTRAY",
+    "BABY",
+    "BANKBOOK",
+    "BEAM",
+    "BELT",
+    "BLIZZARD",
+    "BOUNDARY",
+    "BROCHURE",
+    "BUSH",
+    "CANDLE",
+    "CASE",
+    "CENTIMETER",
+    "CHEST",
+    "CITIZENSHIP",
+    "COAST",
+    "COMMA",
+    "COPPER",
+    "CRATE",
+    "CUB",
+    "DAMAGE",
+    "DEER",
+    "DIBBLE",
+    "DISTRIBUTOR",
+    "DRAW",
+    "EAR",
+    "EMPLOYER",
+    "EXAMINATION",
+    "FANG",
+    "FICTION",
+    "FLOCK",
+    "FOUNTAIN",
+    "GALLEY",
+    "GHANA",
+    "GOVERNMENT",
+    "GROUP",
+    "HANDBALL",
+    "HELEN",
+    "HOPE",
+    "IDEA",
+    "INTESTINE",
+    "JEEP",
+    "KAMIKAZE",
+    "KNEE",
+    "LAURA",
+    "LILAC",
+    "LOOK",
+    "MAILBOX",
+    "MASCARA",
+    "MEXICO",
+    "MOAT",
+    "MUSCLE",
+    "NIC",
+    "OATMEAL",
+    "ORANGE",
+    "PAIN",
+    "PARK",
+    "PEANUT",
+    "PHARMACIST",
+    "PLACE",
+    "POLICE",
+    "PRECIPITATION",
+    "PSYCHIATRIST",
+    "QUICKSAND",
+    "RANGE",
+    "REMINDER",
+    "RIVER",
+    "RUGBY",
+    "SARDINE",
+    "SCREW",
+    "SEPTEMBER",
+    "SHOE",
+    "SISTER-IN-LAW",
+    "SNOW",
+    "SOUTH AFRICA",
+    "SPROUT",
+    "STEP-FATHER",
+    "STOVE",
+    "SUNSHINE",
+    "SYCAMORE",
+    "TEAM",
+    "THOUGHT",
+    "TOE",
+    "TRANSMISSION",
+    "TULIP",
+    "UNDERWEAR",
+    "VEST",
+    "WALRUS",
+    "WHEEL",
+    "WOMEN",
+    "YOKE"
+};
+void randomWords() {
+    // Because the interval timer doesn't seem to work after 30 seconds
+    // the code counts down in 10 second intervals.
+    if (randomWordIntervalCounter == 60) {
+        toSemaphore(WORDS[rand() % WORD_COUNT]);
+        toSemaphore(" ");
+        toSemaphore(WORDS[rand() % WORD_COUNT]);
+        toSemaphore(" ");
+        toSemaphore(WORDS[rand() % WORD_COUNT]);
+        randomWordIntervalCounter = 0;
+    }
+    randomWordIntervalCounter++;
+}
+
 /*
     Set the LED pins to use for morse code output.
 */
@@ -120,9 +236,9 @@ void pins() {
     Takes the given "message" and passes it char-by-char to the "semaphore()" function.
 */
 
-void toSemaphore(char *message, int length) {
-    for (int i = 0; i < length; i++) {
-        semaphore(message[i]);
+void toSemaphore(char *string) {
+    for (int i = 0; i < strlen(string); i++) {
+        semaphore(string[i]);
     }
 }
 
@@ -209,7 +325,7 @@ void semaphore(int letter) {
     }
 
     /*
-        Always reast after a char.
+        Always reset after a char.
     */
 
     flagA.write(map(0, 0, 180, MIN + trimFlagA, MAX + trimFlagA));
@@ -218,55 +334,19 @@ void semaphore(int letter) {
     delay(UNIT * 1);
 }
 
-/*
-    Standard setup function.
-*/
-
+// Standard setup function.
 void setup() {
-
-    /*
-        Setup the pins to use for semaphore code output.
-    */
-
     pins();
-
-    /*
-        Listen for incoming data on the serial port.
-    */
-
     Serial.begin(9600);
-
-    /*
-        Create a message to use in the sent alert once the setup is complete.
-    */
-
-    char message[] = "U";
-
-    /*
-        Send the message to announce that the setup is complete.
-    */
-
-    toSemaphore(message, sizeof(message) / sizeof(char) - 1);
+    toSemaphore("HELLO");
+    timer.setInterval(10000, randomWords);
 }
 
-/*
-    Standard loop function.
-*/
-
+// Standard loop function.
 void loop() {
-  
+    timer.run();
     if (Serial.available() > 0) {
-
-        /*
-            If there is data available on the serial port read the first byte.
-        */
-
         int incomingByte = Serial.read();
-
-        /*
-            Output byte we just read a semaphore code.
-        */
-
         semaphore(incomingByte);
     }
 }
